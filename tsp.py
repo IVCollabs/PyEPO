@@ -54,16 +54,52 @@ class MStspMTZModel(tspABModel):
         u = m.addVars(self.nodes, name="u")
         # sense
         m.modelSense = GRB.MINIMIZE
+
         # constraints
-        m.addConstrs(x.sum("*", j) == 1 for j in self.nodes)
-        m.addConstrs(x.sum(i, "*") == 1 for i in self.nodes)
-        m.addConstrs(u[j] - u[i] >=
-                     len(self.nodes) * (x[i,j] - 1) + 1
-                     for (i,j) in directed_edges
-                     if (i != 0) and (j != 0))
+        # Each city (except depot) is visited exactly once
+        for i in range(1, self.nodes):
+            m.addConstr(gp.quicksum(x[i, j, k] for j in range(self.nodes) if j != i for k in range(salesmen)) == 1, name=f"VisitOnce_{i}")
+
+        # Each city is departed from once
+        for i in range(1, self.nodes):
+            m.addConstr(gp.quicksum(x[j, i, k] for j in range(self.nodes) if j != i for k in range(salesmen)) == 1, name=f"DepartOnce_{i}")
+
+        # Depot constraints
+        for k in range(salesmen):
+            m.addConstr(gp.quicksum(x[0, j, k] for j in range(1, self.nodes)) == 1, name=f"DepotExit_{k}")
+            m.addConstr(gp.quicksum(x[j, 0, k] for j in range(1, self.nodes)) == 1, name=f"DepotEnter_{k}")
+
+        # Flow conservation
+        for k in range(salesmen):
+            for i in range(self.nodes):
+                m.addConstr(gp.quicksum(x[i, j, k] for j in range(self.nodes) if j != i) == gp.quicksum(x[j, i, k] for j in range(self.nodes) if j != i), name=f"Flow_{i}_{k}")
+
+        # Subtour elimination (MTZ constraints)
+        for k in range(salesmen):
+            for i in range(1, self.nodes):
+                for j in range(1, self.nodes):
+                    if i != j:
+                        m.addConstr(u[i] - u[j] + self.nodes * x[i, j, k] <= self.nodes - 1, name=f"Subtour_{i}_{j}_{k}")
+
+        for i in range(1, self.nodes):
+            m.addConstr(u[i] >= 1, name=f"uLower_{i}")
+            m.addConstr(u[i] <= self.nodes - 1, name=f"uUpper_{i}")
+
+        # Skill constraints
+        for k in range(salesmen):
+            for i in range(1, self.nodes):
+                if i not in skills[k]:
+                    for j in range(self.nodes):
+                        m.addConstr(x[i, j, k] == 0, name=f"SkillOut_{i}_{j}_{k}")
+                        m.addConstr(x[j, i, k] == 0, name=f"SkillIn_{j}_{i}_{k}")
+
+        # Maximum cities per salesman
+        for k in range(salesmen):
+            m.addConstr(gp.quicksum(x[i, j, k] for i in range(self.nodes) for j in range(1, self.nodes) if i != j) <= q, name=f"MaxTour_{k}")
         return m, x
 
     def setObj(self, c):
+        #TODO: This needs to be updated to minimize traval cost
         """
         A method to set objective function
 
@@ -80,6 +116,7 @@ class MStspMTZModel(tspABModel):
         """
         A method to solve model
         """
+        #TODO: This needs to be updated since the format of the decision variable has changed
         self._model.update()
         self._model.optimize()
         sol = np.zeros(self.num_cost, dtype=np.uint8)
