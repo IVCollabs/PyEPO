@@ -9,11 +9,29 @@ from gurobipy import GRB
 
 from pyepo.model.grb.tsp import tspABModel
 
+# TODO: Read from an additional file
+# Number of salesmen
+salesmen = 2  
+# Maximum cities per salesman -  equitable work load???
+q = 3
+
+# Skill constraints: which salesmen can visit which cities (excluding depot)
+skills = {
+    0: [1, 2, 3],  # Salesman 0 can visit cities 1, 2, 3
+    1: [3, 4],     # Salesman 1 can visit cities 3, 4
+}
+# Generate random distance matrix (symmetric with zeros on the diagonal)
+np.random.seed(42) #TODO: Remover seed depois
+
+#TODO: nodes é o mesmo de self.nodes, talvez seja melhor a leitura desses arquivos ser feita dentro de um método novo da classe
+distances = np.random.randint(1, 20, size=(nodes, nodes))
+np.fill_diagonal(distances, 0)
+distances = (distances + distances.T) // 2  # Make it symmetric
 
 
-class tspMTZModel(tspABModel):
+class MStspMTZModel(tspABModel):
     """
-    This class is optimization model for traveling salesman problem based on Miller-Tucker-Zemlin (MTZ) formulation.
+    This class is optimization model for a multi skill traveling salesman problem based on Miller-Tucker-Zemlin (MTZ) formulation.
 
     Attributes:
         _model (GurobiPy model): Gurobi model
@@ -28,12 +46,11 @@ class tspMTZModel(tspABModel):
             tuple: optimization model and variables
         """
         # ceate a model
-        m = gp.Model("tsp")
+        m = gp.Model("multi_skills_tsp")
         # turn off output
         m.Params.outputFlag = 0
-        # varibles
-        directed_edges = self.edges + [(j, i) for (i, j) in self.edges]
-        x = m.addVars(directed_edges, name="x", vtype=GRB.BINARY)
+        # variables
+        x = m.addVars(self.nodes, self.nodes, salesmen, vtype=GRB.BINARY, name="x")
         u = m.addVars(self.nodes, name="u")
         # sense
         m.modelSense = GRB.MINIMIZE
@@ -96,69 +113,4 @@ class tspMTZModel(tspABModel):
         """
         A method to get linear relaxation model
         """
-        # copy
-        model_rel = tspMTZModelRel(self.num_nodes)
-        return model_rel
-
-
-class tspMTZModelRel(tspMTZModel):
-    """
-    This class is relaxation of tspMTZModel.
-
-    Attributes:
-        _model (GurobiPy model): Gurobi model
-        num_nodes (int): Number of nodes
-        edges (list): List of edge index
-    """
-
-    def _getModel(self):
-        """
-        A method to build Gurobi model
-
-        Returns:
-            tuple: optimization model and variables
-        """
-        # ceate a model
-        m = gp.Model("tsp")
-        # turn off output
-        m.Params.outputFlag = 0
-        # varibles
-        directed_edges = self.edges + [(j, i) for (i, j) in self.edges]
-        x = m.addVars(directed_edges, name="x", ub=1)
-        u = m.addVars(self.nodes, name="u")
-        # sense
-        m.modelSense = GRB.MINIMIZE
-        # constraints
-        m.addConstrs(x.sum("*", j) == 1 for j in self.nodes)
-        m.addConstrs(x.sum(i, "*") == 1 for i in self.nodes)
-        m.addConstrs(u[j] - u[i] >=
-                     len(self.nodes) * (x[i,j] - 1) + 1
-                     for (i,j) in directed_edges
-                     if (i != 0) and (j != 0))
-        return m, x
-
-    def solve(self):
-        """
-        A method to solve model
-
-        Returns:
-            tuple: optimal solution (list) and objective value (float)
-        """
-        self._model.update()
-        self._model.optimize()
-        sol = np.zeros(self.num_cost)
-        for k, (i,j) in enumerate(self.edges):
-            sol[k] = self.x[i,j].x + self.x[j,i].x
-        return sol, self._model.objVal
-
-    def relax(self):
-        """
-        A forbidden method to relax MIP model
-        """
-        raise RuntimeError("Model has already been relaxed.")
-
-    def getTour(self, sol):
-        """
-        A forbidden method to get a tour from solution
-        """
-        raise RuntimeError("Relaxation Model has no integer solution.")
+        raise RuntimeError("Relaxation Model not implemented.")
