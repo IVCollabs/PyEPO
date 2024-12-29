@@ -108,10 +108,12 @@ class MStspMTZModel(tspABModel):
         Args:
             c (list): cost vector
         """
-        if len(c) != self.num_cost:
-            raise ValueError("Size of cost vector cannot match vars.")
-        obj = gp.quicksum(c[k] * (self.x[i,j] + self.x[j,i])
-                          for k, (i,j) in enumerate(self.edges))
+        # if len(c) != self.num_cost:
+        #     raise ValueError("Size of cost vector cannot match vars.")
+        # obj = gp.quicksum(c[k] * (self.x[i,j] + self.x[j,i])
+        #                   for k, (i,j) in enumerate(self.edges))
+        obj = gp.quicksum(distances[i][j] * self.x[i, j, k] for i in self.nodes for j in self.nodes for k in range(salesmen))
+        
         self._model.setObjective(obj)
 
     def solve(self):
