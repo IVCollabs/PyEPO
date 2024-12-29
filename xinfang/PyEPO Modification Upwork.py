@@ -7,6 +7,7 @@ Also save x and c.
 
 
 """
+import os
 import numpy as np
 import pandas as pd
 import pyepo
@@ -18,7 +19,6 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from classes_and_methods import LinearRegression, trainModel, visLearningCurve
-import os
 
 # Parameters
 NUM_DATA = 10   # number of training instances
