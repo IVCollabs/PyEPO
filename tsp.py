@@ -129,27 +129,6 @@ class MStspMTZModel(tspABModel):
                 sol[k] = 1
         return sol, self._model.objVal
 
-    def addConstr(self, coefs, rhs):
-        """
-        A method to add new constraint
-
-        Args:
-            coefs (ndarray): coeffcients of new constraint
-            rhs (float): right-hand side of new constraint
-
-        Returns:
-            optModel: new model with the added constraint
-        """
-        if len(coefs) != self.num_cost:
-            raise ValueError("Size of coef vector cannot cost.")
-        # copy
-        new_model = self.copy()
-        # add constraint
-        new_model._model.addConstr(
-            gp.quicksum(coefs[k] * (new_model.x[i,j] + new_model.x[j,i])
-                        for k, (i,j) in enumerate(new_model.edges)) <= rhs)
-        return new_model
-
     def relax(self):
         """
         A method to get linear relaxation model
