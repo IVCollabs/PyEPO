@@ -67,7 +67,7 @@ def trainModel(reg, loss_func, method_name, opt_model, loader_train, loader_test
     return loss_log, loss_log_regret 
     #loss_log is loss for training set and loss_log_regret is for testing set
 
-def visLearningCurve(loss_log, loss_log_regret):
+def visLearningCurve(loss_log, loss_log_regret, path, show = False):
     # create figure and subplots
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16,4))
 
@@ -93,4 +93,8 @@ def visLearningCurve(loss_log, loss_log_regret):
     ax2.set_ylabel("Regret (%)", fontsize=16)
     ax2.set_title("Learning Curve on Test Set", fontsize=16)
 
-    plt.show()
+    if show:
+        plt.show()
+
+    # Saves the fig in the output path
+    fig.savefig(path + 'learning_curve.png', dpi=300, bbox_inches='tight')
