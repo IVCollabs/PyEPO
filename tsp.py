@@ -116,19 +116,19 @@ class MStspMTZModel(tspABModel):
         
         self._model.setObjective(obj)
 
-    def solve(self):
-        """
-        A method to solve model
-        """
-        #TODO: This needs to be updated since the format of the decision variable has changed
-        self._model.update()
-        self._model.optimize()
-        sol = np.zeros(self.num_cost, dtype=np.uint8)
-        for k, (i,j) in enumerate(self.edges):
-            if self.x[i,j].x > 1e-2 or self.x[j,i].x > 1e-2:
-                sol[k] = 1
-        return sol, self._model.objVal
-
+    # def solve(self):
+    #     """
+    #     A method to solve model
+    #     """
+    #     #TODO: This needs to be updated since the format of the decision variable has changed
+    #     self._model.update()
+    #     self._model.optimize()
+    #     sol = np.zeros(self.num_cost, dtype=np.uint8)
+    #     for k, (i,j) in enumerate(self.edges):
+    #         if self.x[i,j].x > 1e-2 or self.x[j,i].x > 1e-2:
+    #             sol[k] = 1
+    #     return sol, self._model.objVal
+    
     def relax(self):
         """
         A method to get linear relaxation model
