@@ -64,6 +64,7 @@ reg = LinearRegression(
     num_edge = NUM_EDGE
 )
 
+# TODO: What was the purpose of this regret? It is not being used anywhere and actually this is calculated in the trainModel function
 # Init regret 
 regret = pyepo.metric.regret(reg, optmodel, loader_test)
 
