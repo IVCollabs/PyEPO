@@ -1,19 +1,30 @@
 
-from tsp import MStspMTZModel, distances, salesmen
+from tsp import MStspMTZModel, distances, num_salesmen
 from xinfang.plot_routes import plot_salesman_routes
 
-
+# Initializes the model
 optmodel = MStspMTZModel(num_nodes=5)
+
+# Sets the objective function
+cost = None
+optmodel.setObj(cost)
+
+# Solves the model
 sol, obj = optmodel.solve()
 print('Obj: {}'.format(obj))
 
 # Extract routes from solution
+selected_nodes = [
+    list(optmodel.x.keys())[i] 
+    for i, val in enumerate(sol) 
+    if val>0.99 # Include only active nodes
+] 
+
 routes = {}
-for i, (i, j, k) in enumerate(optmodel.x.keys()):
-    if sol[i] > 0.99: # Include only active routes
-        if k not in routes:
-            routes[k] = []
-        routes[k].append((i, j))
+for (i, j, k) in selected_nodes:
+    if k not in routes:
+        routes[k] = []
+    routes[k].append((i, j))
 print(routes)
 
 coordinates = {
@@ -32,7 +43,7 @@ for i in range(n):
         if i != j:  
             dist[(i, j)] = distances[i][j]
             
-plot_salesman_routes(routes, coordinates, salesmen, dist) 
+plot_salesman_routes(routes, coordinates, num_salesmen, dist) 
 
 
 # based on: https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimization%20Model.ipynb
