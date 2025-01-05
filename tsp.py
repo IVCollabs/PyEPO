@@ -57,15 +57,13 @@ class MStspMTZModel(tspABModel):
         # sense
         m.modelSense = GRB.MINIMIZE
 
-        # constraints
-        # Each city (except depot) is visited exactly once
+        # Visiting constraints
         for i in range(1, self.num_nodes):
+            # Each city (except depot) is visited exactly once
             m.addConstr(gp.quicksum(x[i, j, k] 
                                     for j in self.nodes if j != i 
                                     for k in range(num_salesmen)) == 1, name=f"VisitOnce_{i}")
-
-        # Each city is departed from once
-        for i in range(1, self.num_nodes):
+            # Each city is departed from once
             m.addConstr(gp.quicksum(x[j, i, k] 
                                     for j in self.nodes if j != i 
                                     for k in range(num_salesmen)) == 1, name=f"DepartOnce_{i}")
