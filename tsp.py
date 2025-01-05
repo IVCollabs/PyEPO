@@ -60,11 +60,15 @@ class MStspMTZModel(tspABModel):
         # constraints
         # Each city (except depot) is visited exactly once
         for i in range(1, self.num_nodes):
-            m.addConstr(gp.quicksum(x[i, j, k] for j in self.nodes if j != i for k in range(num_salesmen)) == 1, name=f"VisitOnce_{i}")
+            m.addConstr(gp.quicksum(x[i, j, k] 
+                                    for j in self.nodes if j != i 
+                                    for k in range(num_salesmen)) == 1, name=f"VisitOnce_{i}")
 
         # Each city is departed from once
         for i in range(1, self.num_nodes):
-            m.addConstr(gp.quicksum(x[j, i, k] for j in self.nodes if j != i for k in range(num_salesmen)) == 1, name=f"DepartOnce_{i}")
+            m.addConstr(gp.quicksum(x[j, i, k] 
+                                    for j in self.nodes if j != i 
+                                    for k in range(num_salesmen)) == 1, name=f"DepartOnce_{i}")
 
         # Depot constraints
         for k in range(num_salesmen):
@@ -74,7 +78,9 @@ class MStspMTZModel(tspABModel):
         # Flow conservation
         for k in range(num_salesmen):
             for i in self.nodes:
-                m.addConstr(gp.quicksum(x[i, j, k] for j in self.nodes if j != i) == gp.quicksum(x[j, i, k] for j in self.nodes if j != i), name=f"Flow_{i}_{k}")
+                A = gp.quicksum(x[i, j, k] for j in self.nodes if j != i)
+                B = gp.quicksum(x[j, i, k] for j in self.nodes if j != i)
+                m.addConstr(A == B, name=f"Flow_{i}_{k}")
 
         # Subtour elimination (MTZ constraints)
         for k in range(num_salesmen):
@@ -97,7 +103,10 @@ class MStspMTZModel(tspABModel):
 
         # Maximum cities per salesman
         for k in range(num_salesmen):
-            m.addConstr(gp.quicksum(x[i, j, k] for i in self.nodes for j in range(1, self.num_nodes) if i != j) <= q, name=f"MaxTour_{k}")
+            m.addConstr(gp.quicksum(x[i, j, k] 
+                                    for i in self.nodes 
+                                    for j in range(1, self.num_nodes) 
+                                    if i != j) <= q, name=f"MaxTour_{k}")
         return m, x
 
     def setObj(self, c):
@@ -112,7 +121,10 @@ class MStspMTZModel(tspABModel):
         #     raise ValueError("Size of cost vector cannot match vars.")
         # obj = gp.quicksum(c[k] * (self.x[i,j] + self.x[j,i])
         #                   for k, (i,j) in enumerate(self.edges))
-        obj = gp.quicksum(distances[i][j] * self.x[i, j, k] for i in self.nodes for j in self.nodes for k in range(num_salesmen))
+        obj = gp.quicksum(distances[i][j] * self.x[i, j, k] 
+                          for i in self.nodes 
+                          for j in self.nodes 
+                          for k in range(num_salesmen))
         
         self._model.setObjective(obj)
 
