@@ -1,3 +1,6 @@
+"""Main script to run custom model.
+Source: https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimization%20Model.ipynb
+"""
 
 import numpy as np
 
@@ -49,6 +52,3 @@ for i in range(n):
             dist[(i, j)] = optmodel.distances[i][j]
             
 plot_salesman_routes(routes, coordinates, optmodel.num_salesmen, dist) 
-
-
-# based on: https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimization%20Model.ipynb
