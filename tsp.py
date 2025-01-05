@@ -2,33 +2,10 @@
 Traveling salesman problem additional implementations for the PyEPO package.
 """
 
-
 import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
-
 from pyepo.model.grb.tsp import tspABModel
-
-# TODO: Read from an additional file
-# Number of salesmen
-num_salesmen = 2  
-# Maximum cities per salesman -  equitable work load???
-q = 3
-
-nodes = 5
-
-# Skill constraints: which salesmen can visit which cities (excluding depot)
-skills = {
-    0: [1, 2, 3],  # Salesman 0 can visit cities 1, 2, 3
-    1: [3, 4],     # Salesman 1 can visit cities 3, 4
-}
-# Generate random distance matrix (symmetric with zeros on the diagonal)
-np.random.seed(42) #TODO: Remover seed depois
-
-#TODO: nodes é o mesmo de self.nodes, talvez seja melhor a leitura desses arquivos ser feita dentro de um método novo da classe
-distances = np.random.randint(1, 20, size=(nodes, nodes))
-np.fill_diagonal(distances, 0)
-distances = (distances + distances.T) // 2  # Make it symmetric
 
 
 class MStspMTZModel(tspABModel):
@@ -40,6 +17,14 @@ class MStspMTZModel(tspABModel):
         num_nodes (int): Number of nodes
         edges (list): List of edge index
     """
+    def __init__(self, num_nodes):
+        """
+        Args:
+            num_nodes (int): number of nodes
+        """
+        self._loadInfo(num_nodes)
+        super().__init__(num_nodes)
+
     def _getModel(self):
         """
         A method to build Gurobi model
@@ -52,7 +37,7 @@ class MStspMTZModel(tspABModel):
         # turn off output
         m.Params.outputFlag = 0
         # variables
-        x = m.addVars(self.num_nodes, self.num_nodes, num_salesmen, vtype=GRB.BINARY, name="x")
+        x = m.addVars(self.num_nodes, self.num_nodes, self.num_salesmen, vtype=GRB.BINARY, name="x")
         u = m.addVars(self.num_nodes, name="u")
         # sense
         m.modelSense = GRB.MINIMIZE
@@ -62,26 +47,26 @@ class MStspMTZModel(tspABModel):
             # Each city (except depot) is visited exactly once
             m.addConstr(gp.quicksum(x[i, j, k] 
                                     for j in self.nodes if j != i 
-                                    for k in range(num_salesmen)) == 1, name=f"VisitOnce_{i}")
+                                    for k in range(self.num_salesmen)) == 1, name=f"VisitOnce_{i}")
             # Each city is departed from once
             m.addConstr(gp.quicksum(x[j, i, k] 
                                     for j in self.nodes if j != i 
-                                    for k in range(num_salesmen)) == 1, name=f"DepartOnce_{i}")
+                                    for k in range(self.num_salesmen)) == 1, name=f"DepartOnce_{i}")
 
         # Depot constraints
-        for k in range(num_salesmen):
+        for k in range(self.num_salesmen):
             m.addConstr(gp.quicksum(x[0, j, k] for j in range(1, self.num_nodes)) == 1, name=f"DepotExit_{k}")
             m.addConstr(gp.quicksum(x[j, 0, k] for j in range(1, self.num_nodes)) == 1, name=f"DepotEnter_{k}")
 
         # Flow conservation
-        for k in range(num_salesmen):
+        for k in range(self.num_salesmen):
             for i in self.nodes:
                 A = gp.quicksum(x[i, j, k] for j in self.nodes if j != i)
                 B = gp.quicksum(x[j, i, k] for j in self.nodes if j != i)
                 m.addConstr(A == B, name=f"Flow_{i}_{k}")
 
         # Subtour elimination (MTZ constraints)
-        for k in range(num_salesmen):
+        for k in range(self.num_salesmen):
             for i in range(1, self.num_nodes):
                 for j in range(1, self.num_nodes):
                     if i != j:
@@ -92,19 +77,19 @@ class MStspMTZModel(tspABModel):
             m.addConstr(u[i] <= self.num_nodes - 1, name=f"uUpper_{i}")
 
         # Skill constraints
-        for k in range(num_salesmen):
+        for k in range(self.num_salesmen):
             for i in range(1, self.num_nodes):
-                if i not in skills[k]:
+                if i not in self.skills[k]:
                     for j in self.nodes:
                         m.addConstr(x[i, j, k] == 0, name=f"SkillOut_{i}_{j}_{k}")
                         m.addConstr(x[j, i, k] == 0, name=f"SkillIn_{j}_{i}_{k}")
 
         # Maximum cities per salesman
-        for k in range(num_salesmen):
+        for k in range(self.num_salesmen):
             m.addConstr(gp.quicksum(x[i, j, k] 
                                     for i in self.nodes 
                                     for j in range(1, self.num_nodes) 
-                                    if i != j) <= q, name=f"MaxTour_{k}")
+                                    if i != j) <= self.max_city, name=f"MaxTour_{k}")
         return m, x
 
     def setObj(self, c):
@@ -119,25 +104,36 @@ class MStspMTZModel(tspABModel):
         #     raise ValueError("Size of cost vector cannot match vars.")
         # obj = gp.quicksum(c[k] * (self.x[i,j] + self.x[j,i])
         #                   for k, (i,j) in enumerate(self.edges))
-        obj = gp.quicksum(distances[i][j] * self.x[i, j, k] 
+        obj = gp.quicksum(self.distances[i][j] * self.x[i, j, k] 
                           for i in self.nodes 
                           for j in self.nodes 
-                          for k in range(num_salesmen))
+                          for k in range(self.num_salesmen))
         
         self._model.setObjective(obj)
 
-    # def solve(self):
-    #     """
-    #     A method to solve model
-    #     """
-    #     #TODO: This needs to be updated since the format of the decision variable has changed
-    #     self._model.update()
-    #     self._model.optimize()
-    #     sol = np.zeros(self.num_cost, dtype=np.uint8)
-    #     for k, (i,j) in enumerate(self.edges):
-    #         if self.x[i,j].x > 1e-2 or self.x[j,i].x > 1e-2:
-    #             sol[k] = 1
-    #     return sol, self._model.objVal
+    def _loadInfo(self, num_nodes):
+        """
+        A method to load additional information from external files for the model
+        
+        Args:
+            num_nodes (int): number of nodes
+        """
+        # TODO: Read from an additional file
+        # Number of salesmen
+        self.num_salesmen = 2  
+        # Maximum cities per salesman -  equitable work load???
+        self.max_city = 3
+
+        # Skill constraints: which salesmen can visit which cities (excluding depot)
+        self.skills = {
+            0: [1, 2, 3],  # Salesman 0 can visit cities 1, 2, 3
+            1: [3, 4],     # Salesman 1 can visit cities 3, 4
+        }
+
+        self.distances = np.random.randint(1, 20, size=(num_nodes, num_nodes))
+        np.fill_diagonal(self.distances, 0)
+        self.distances = (self.distances + self.distances.T) // 2  # Make it symmetric
+        
     
     def relax(self):
         """

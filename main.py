@@ -1,6 +1,11 @@
 
-from tsp import MStspMTZModel, distances, num_salesmen
+import numpy as np
+
+from tsp import MStspMTZModel
 from xinfang.plot_routes import plot_salesman_routes
+
+# Seed for replicability
+np.random.seed(42) 
 
 # Initializes the model
 optmodel = MStspMTZModel(num_nodes=5)
@@ -37,13 +42,13 @@ coordinates = {
 
 # Transform the distance matrix into a dictionary
 dist = {}
-n = len(distances)
+n = len(optmodel.distances)
 for i in range(n):
     for j in range(n):
         if i != j:  
-            dist[(i, j)] = distances[i][j]
+            dist[(i, j)] = optmodel.distances[i][j]
             
-plot_salesman_routes(routes, coordinates, num_salesmen, dist) 
+plot_salesman_routes(routes, coordinates, optmodel.num_salesmen, dist) 
 
 
 # based on: https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimization%20Model.ipynb
