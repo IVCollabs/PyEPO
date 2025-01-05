@@ -10,7 +10,8 @@ from pyepo.model.grb.tsp import tspABModel
 
 class MStspMTZModel(tspABModel):
     """
-    This class is optimization model for a multi skill traveling salesman problem based on Miller-Tucker-Zemlin (MTZ) formulation.
+    This class is optimization model for a multi skill traveling salesman problem based 
+    on Miller-Tucker-Zemlin (MTZ) formulation.
 
     Attributes:
         _model (GurobiPy model): Gurobi model
@@ -70,7 +71,9 @@ class MStspMTZModel(tspABModel):
             for i in range(1, self.num_nodes):
                 for j in range(1, self.num_nodes):
                     if i != j:
-                        m.addConstr(u[i] - u[j] + self.num_nodes * x[i, j, k] <= self.num_nodes - 1, name=f"Subtour_{i}_{j}_{k}")
+                        m.addConstr(
+                            u[i] - u[j] + self.num_nodes * x[i, j, k] <= self.num_nodes - 1,
+                            name=f"Subtour_{i}_{j}_{k}")
 
         for i in range(1, self.num_nodes):
             m.addConstr(u[i] >= 1, name=f"uLower_{i}")
