@@ -10,6 +10,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from classes_and_methods import LinearRegression, trainModel, visLearningCurve
+from tsp import MStspMTZModel
 
 # Parameters
 NUM_DATA = 10   # number of training instances
@@ -37,7 +38,12 @@ NUM_EDGE = int(NUM_NODE * (NUM_NODE - 1) / 2)
 x, c = pyepo.data.tsp.genData(NUM_DATA, NUM_FEAT, NUM_NODE, deg=4, noise_width=0, seed=135)
 
 # Build optimization model by calling the single travelling salesman model
-optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
+# optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
+optmodel = MStspMTZModel(num_nodes=5)
+
+# Update cost
+c = optmodel.distances/c
+
 
 ### Preparing the data
 
@@ -64,9 +70,9 @@ reg = LinearRegression(
     num_edge = NUM_EDGE
 )
 
-# TODO: What was the purpose of this regret? It is not being used anywhere and actually this is calculated in the trainModel function
 # Init regret 
 regret = pyepo.metric.regret(reg, optmodel, loader_test)
+print("Regret benchmark: ", regret)
 
 ### Training models
 

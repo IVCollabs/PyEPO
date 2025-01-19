@@ -137,7 +137,6 @@ class MStspMTZModel(tspABModel):
         np.fill_diagonal(self.distances, 0)
         self.distances = (self.distances + self.distances.T) // 2  # Make it symmetric
         
-    
     def relax(self):
         """
         A method to get linear relaxation model
