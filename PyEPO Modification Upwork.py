@@ -13,11 +13,12 @@ from classes_and_methods import LinearRegression, trainModel, visLearningCurve
 from tsp import MStspMTZModel
 
 # Parameters
-NUM_DATA = 10   # number of training instances
-NUM_FEAT = 5    # number of features x (to predict c)
-NUM_NODE = 4    # number of nodes in the network
-NUM_EPOCHS = 10 # number of epochs for training
-BATCH_SIZE = 10 # batch size for training
+NUM_SALESMAN = 2 # number of salesman
+NUM_DATA = 100   # number of training instances
+NUM_FEAT = 5     # number of features x (to predict c)
+NUM_NODE = 4     # number of nodes in the network
+NUM_EPOCHS = 100 # number of epochs for training
+BATCH_SIZE = 10  # batch size for training
 OUTPUT_PATH = "outputs/"
 
 # Verifies if outputs path folder exist,
@@ -39,11 +40,32 @@ x, c = pyepo.data.tsp.genData(NUM_DATA, NUM_FEAT, NUM_NODE, deg=4, noise_width=0
 
 # Build optimization model by calling the single travelling salesman model
 # optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
-optmodel = MStspMTZModel(num_nodes=5)
+optmodel = MStspMTZModel(num_nodes=NUM_NODE)
 
-# Update cost
-c = optmodel.distances/c
+# Preparing the distance vector to update c
+dist_matrix = np.triu(optmodel.distances)
+dist_vector = dist_matrix[dist_matrix!=0]
 
+# Modeling de cost c to be the same way as the optimization model
+updated_c = []
+for cost_vector in c:
+
+    # Updating the cost with the distance
+    cost_vector = dist_vector/cost_vector
+
+    matriz = np.zeros((NUM_NODE, NUM_NODE))
+    tri_upper = np.triu_indices(NUM_NODE, k=1)
+    matriz[tri_upper] = cost_vector
+    matriz += matriz.T  # Simetria
+    flatten_cost = matriz.flatten()
+    correct_vector = []
+    for cost in flatten_cost:
+        for _ in range(NUM_SALESMAN):
+            correct_vector.append(cost)
+    updated_c.append(np.array(correct_vector))
+updated_c = np.array(updated_c)
+
+c = updated_c
 
 ### Preparing the data
 
@@ -65,9 +87,13 @@ loader_test = DataLoader(dataset_test, batch_size=BATCH_SIZE, shuffle=False)
 ### Building model
 
 # Init linear nn model for prediction
+# reg = LinearRegression(
+#     num_feat = NUM_FEAT,
+#     num_edge = NUM_EDGE*NUM_SALESMAN
+# )
 reg = LinearRegression(
     num_feat = NUM_FEAT,
-    num_edge = NUM_EDGE
+    num_edge = NUM_NODE*NUM_NODE*NUM_SALESMAN
 )
 
 # Init regret 
@@ -79,7 +105,7 @@ print("Regret benchmark: ", regret)
 # Init model SPO
 reg = LinearRegression(
     num_feat = NUM_FEAT,
-    num_edge = NUM_EDGE
+    num_edge = NUM_NODE*NUM_NODE*NUM_SALESMAN
 )
 spop = pyepo.func.SPOPlus(optmodel, processes=1)
 
