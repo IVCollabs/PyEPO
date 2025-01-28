@@ -14,7 +14,8 @@ np.random.seed(42)
 optmodel = MStspMTZModel(num_nodes=5)
 
 # Sets the objective function
-cost = None
+dist_matrix = np.triu(optmodel.distances)
+cost = dist_matrix[dist_matrix!=0]
 optmodel.setObj(cost)
 
 # Solves the model
@@ -23,9 +24,9 @@ print('Obj: {}'.format(obj))
 
 # Extract routes from solution
 selected_nodes = [
-    list(optmodel.x.keys())[i] 
-    for i, val in enumerate(sol) 
-    if val>0.99 # Include only active nodes
+    idx
+    for idx, val in optmodel.x.items() 
+    if val.X>0.99 # Include only active nodes
 ] 
 
 routes = {}

@@ -105,16 +105,73 @@ class MStspMTZModel(tspABModel):
         """
         # if len(c) != self.num_cost:
         #     raise ValueError("Size of cost vector cannot match vars.")
-        obj = gp.quicksum(c[i+j+k] * self.x[i, j, k] 
-                          for i in self.nodes 
-                          for j in self.nodes 
-                          for k in range(self.num_salesmen))
+
+        def criar_matriz_simetrica(vetor):
+            # Determinar o tamanho da matriz k
+            N = len(vetor)
+            k = int((1 + np.sqrt(1 + 8 * N)) / 2)  # Resolve N = k*(k-1)/2 para k
+            
+            # Inicializa uma matriz kxk com zeros
+            matriz = np.zeros((k, k))
+            
+            # Preenche o triângulo superior (excluindo a diagonal principal)
+            idx = 0  # Índice para percorrer o vetor
+            for i in range(k):
+                for j in range(i + 1, k):
+                    matriz[i, j] = vetor[idx]
+                    idx += 1
+            
+            # Reflete os valores no triângulo inferior
+            for i in range(k):
+                for j in range(i + 1, k):
+                    matriz[j, i] = matriz[i, j]
+            
+            return matriz
+
+        # Exemplo de uso
+        # vetor = [1, 2, 3, 4, 5, 6]  # Vetor de 6 elementos (k=4)
+        c_matrix = criar_matriz_simetrica(c)
+        # print(matriz_simetrica)
+
+        aux = []
+        for k in range(self.num_salesmen):
+            
+            for i in self.nodes:
+                for j in self.nodes:
+                    if i != j:
+                        aux.append(self.x[i, j, k] *c_matrix[i][j])
+
+
+        obj = gp.quicksum(aux)
         # obj = gp.quicksum(self.distances[i][j] * self.x[i, j, k] 
         #                   for i in self.nodes 
         #                   for j in self.nodes 
         #                   for k in range(self.num_salesmen))
         
         self._model.setObjective(obj)
+
+    def solve(self):
+
+        sol, _ = super().solve()
+
+        sol =  [sum(sol[i:i + self.num_salesmen]) for i in range(0, len(sol), self.num_salesmen)]
+
+        sol_matrix = [sol[i:i + self.num_nodes] for i in range(0, len(sol), self.num_nodes)]
+
+        def soma_simetricos(matriz):
+            n = len(matriz)
+            vetor_resultante = []
+            
+            for i in range(n):
+                for j in range(i + 1, n):
+                    soma = matriz[i][j] + matriz[j][i]
+                    vetor_resultante.append(soma)
+            
+            return vetor_resultante
+
+        sol = soma_simetricos(sol_matrix)
+
+        return sol, _
 
     def _loadInfo(self, num_nodes):
         """

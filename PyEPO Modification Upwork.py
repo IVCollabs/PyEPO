@@ -45,27 +45,7 @@ optmodel = MStspMTZModel(num_nodes=NUM_NODE)
 # Preparing the distance vector to update c
 dist_matrix = np.triu(optmodel.distances)
 dist_vector = dist_matrix[dist_matrix!=0]
-
-# Modeling de cost c to be the same way as the optimization model
-updated_c = []
-for cost_vector in c:
-
-    # Updating the cost with the distance
-    cost_vector = dist_vector/cost_vector
-
-    matriz = np.zeros((NUM_NODE, NUM_NODE))
-    tri_upper = np.triu_indices(NUM_NODE, k=1)
-    matriz[tri_upper] = cost_vector
-    matriz += matriz.T  # Simetria
-    flatten_cost = matriz.flatten()
-    correct_vector = []
-    for cost in flatten_cost:
-        for _ in range(NUM_SALESMAN):
-            correct_vector.append(cost)
-    updated_c.append(np.array(correct_vector))
-updated_c = np.array(updated_c)
-
-c = updated_c
+c = dist_vector/c
 
 ### Preparing the data
 
@@ -87,13 +67,9 @@ loader_test = DataLoader(dataset_test, batch_size=BATCH_SIZE, shuffle=False)
 ### Building model
 
 # Init linear nn model for prediction
-# reg = LinearRegression(
-#     num_feat = NUM_FEAT,
-#     num_edge = NUM_EDGE*NUM_SALESMAN
-# )
 reg = LinearRegression(
     num_feat = NUM_FEAT,
-    num_edge = NUM_NODE*NUM_NODE*NUM_SALESMAN
+    num_edge = NUM_EDGE
 )
 
 # Init regret 
@@ -105,7 +81,7 @@ print("Regret benchmark: ", regret)
 # Init model SPO
 reg = LinearRegression(
     num_feat = NUM_FEAT,
-    num_edge = NUM_NODE*NUM_NODE*NUM_SALESMAN
+    num_edge = NUM_EDGE
 )
 spop = pyepo.func.SPOPlus(optmodel, processes=1)
 
