@@ -1,36 +1,36 @@
 '''Script with coordenate plots'''
 
-import pandas as pd
 import folium
-import os
+import numpy as np
+import matplotlib.pyplot as plt
 
-coordinates = pd.read_csv(os.path.join('input_data', 'coordinates.csv'))
-coordinates.dropna(axis=1, inplace=True)
+def salemen_routes_plot(coordinate_dict:dict, routes: dict):
+    """Function to plot salemmen routes.
 
-# Creating map
+    Args:
+        coordinate_dict (dict): Dictionary where keys are node indices and values are (x, y) coordinates.
+        routes (dict): Dictionary where keys are salesmen (int) and values are lists of edges [(i, j), ...].
+    """        
+    # Creating map
+    lat = np.mean([x[0] for x in list(coordinate_dict.values())])
+    long = np.mean([x[1] for x in list(coordinate_dict.values())])
+    m = folium.Map(location=[lat, long], zoom_start=13)
 
-m = folium.Map(location=coordinates[['Latitude', 'Longitude']].mean().to_list(), zoom_start=13)
+    # Adding markers in each city
+    for idx, city in coordinate_dict.items():
+        folium.Marker(location=[city[0], city[1]], popup=f"City {idx}",  icon=folium.Icon(color='blue', icon='info-sign')).add_to(m)
 
-# Adding markers using apply
-add_marker = lambda row: folium.Marker(
-    location=[row['Latitude'], row['Longitude']],
-    popup=f"Patient {int(row['PatientID'])}",
-    icon=folium.Icon(color='blue', icon='info-sign')).add_to(m)
-coordinates.apply(add_marker, axis=1)
 
-# Adding lines using apply
-# add_line = lambda row: folium.PolyLine(
-#     locations=[[row['Latitude'], row['Longitude']], [row['Latitude2'], row['Longitude2']]], 
-#     color='red', weight=2.5, opacity=1).add_to(m)
-line_coordinates = [
-    coordinates[['Latitude', 'Longitude']].iloc[0].to_list(),
-    coordinates[['Latitude', 'Longitude']].iloc[1].to_list()
-]
+    # Adding routes with diffferent random colors per saleman
+    colors = plt.get_cmap('tab20').colors + plt.get_cmap('tab20b').colors + plt.get_cmap('tab20c').colors
+    colors = [
+        (int(255*rgb[0]*0.7),int(255*rgb[1]*0.7),int(255*rgb[2]*0.7)) 
+        for rgb in colors]
 
-# Create a PolyLine object
-line = folium.PolyLine(locations=line_coordinates, color='blue', weight=5, opacity=0.8, tooltip='info text')
+    for salesman, edges in routes.items():
+        for edge in edges:
+            folium.PolyLine(
+                locations=[coordinate_dict[edge[0]], coordinate_dict[edge[1]]],
+                color='#{:02x}{:02x}{:02x}'.format(*colors[salesman]), weight=2.5, opacity=1).add_to(m)
 
-# Add the line to the map
-line.add_to(m)
-
-m.show_in_browser()
+    m.show_in_browser()

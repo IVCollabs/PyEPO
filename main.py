@@ -4,8 +4,8 @@ Source: https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimi
 
 import numpy as np
 
+from plot import salemen_routes_plot
 from tsp import MStspMTZModel
-from xinfang.plot_routes import plot_salesman_routes
 
 # Seed for replicability
 np.random.seed(42) 
@@ -48,4 +48,4 @@ for i in range(n):
         if i != j:  
             dist[(i, j)] = optmodel.distances[i][j]
             
-plot_salesman_routes(routes, coordinate_dict, optmodel.num_salesmen, dist) 
+salemen_routes_plot(coordinate_dict, routes)
