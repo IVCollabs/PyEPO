@@ -2,10 +2,13 @@
 Traveling salesman problem additional implementations for the PyEPO package.
 """
 
+import os
+import pandas as pd
 import gurobipy as gp
 import numpy as np
 from gurobipy import GRB
 from pyepo.model.grb.tsp import tspABModel
+from classes_and_methods import haversine
 
 
 class MStspMTZModel(tspABModel):
@@ -24,7 +27,7 @@ class MStspMTZModel(tspABModel):
             num_nodes (int): number of nodes
         """
         self._loadInfo(num_nodes)
-        super().__init__(num_nodes)
+        super().__init__(len(self.coordinates))
 
     def _getModel(self):
         """
@@ -180,21 +183,42 @@ class MStspMTZModel(tspABModel):
         Args:
             num_nodes (int): number of nodes
         """
-        # TODO: Read from an additional file
-        # Number of salesmen
-        self.num_salesmen = 2  
-        # Maximum cities per salesman -  equitable work load???
-        self.max_city = 3
 
-        # Skill constraints: which salesmen can visit which cities (excluding depot)
-        self.skills = {
-            0: [1, 2, 3],  # Salesman 0 can visit cities 1, 2, 3
-            1: [3, 4],     # Salesman 1 can visit cities 3, 4
-        }
+        # Loading skills
+        data = pd.read_excel("input_data/skill_mapping.xlsx")
+        data = data.set_index('TSP')
+        self.skills = {}
+        for i in range(len(data)):
+            self.skills[i] = [idx for idx, j in enumerate(data.iloc[i]) if j == 1]
+        self.num_salesmen = len(self.skills)
+        self.max_city = len(data.iloc[0])
 
-        self.distances = np.random.randint(1, 20, size=(num_nodes, num_nodes))
-        np.fill_diagonal(self.distances, 0)
-        self.distances = (self.distances + self.distances.T) // 2  # Make it symmetric
+        # Loading coordinates
+        data = pd.read_csv(os.path.join('input_data', 'coordinates.csv'))
+        coordinates = [(lat, lon) for lat, lon in zip(data['Latitude'], data['Longitude'])]
+
+        # Filtering the same coordinates 
+        coordinates = list(set(coordinates))[:10]
+
+        # TODO: The type of the data is not the same was before
+        # Calculating the distances
+        DISTANCE_PRECISION = 1
+        distance_matrix = []
+        for cord1 in coordinates:
+            cord_list = []
+            for cord2 in coordinates:
+                distance = haversine(cord1, cord2)
+
+                # Multiply the distance and round it to the nearest integer
+                # distance = round(distance * DISTANCE_PRECISION)
+                distance = distance * DISTANCE_PRECISION
+
+                cord_list.append(distance)
+            distance_matrix.append(cord_list)
+
+        # Creating the atributes
+        self.coordinates = coordinates
+        self.distances = distance_matrix
         
     def relax(self):
         """

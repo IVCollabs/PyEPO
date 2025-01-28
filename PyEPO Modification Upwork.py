@@ -15,8 +15,7 @@ from tsp import MStspMTZModel
 # Parameters
 NUM_SALESMAN = 2 # number of salesman
 NUM_DATA = 100   # number of training instances
-NUM_FEAT = 5     # number of features x (to predict c)
-NUM_NODE = 4     # number of nodes in the network
+NUM_FEAT = 5     # number of features x (to predict c)    
 NUM_EPOCHS = 100 # number of epochs for training
 BATCH_SIZE = 10  # batch size for training
 OUTPUT_PATH = "outputs/"
@@ -30,6 +29,12 @@ random.seed(42)
 np.random.seed(42)
 torch.manual_seed(42)
 
+# Build optimization model by calling the single travelling salesman model
+# optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
+optmodel = MStspMTZModel(num_nodes=None)
+
+NUM_NODE = len(optmodel.coordinates) # number of nodes in the network
+
 # Number of edges, converted to integer
 NUM_EDGE = int(NUM_NODE * (NUM_NODE - 1) / 2)  
 
@@ -37,10 +42,6 @@ NUM_EDGE = int(NUM_NODE * (NUM_NODE - 1) / 2)
 # See https://khalil-research.github.io/PyEPO/build/html/content/examples/data.html
 # Generate x, c. 
 x, c = pyepo.data.tsp.genData(NUM_DATA, NUM_FEAT, NUM_NODE, deg=4, noise_width=0, seed=135)
-
-# Build optimization model by calling the single travelling salesman model
-# optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
-optmodel = MStspMTZModel(num_nodes=NUM_NODE)
 
 # Preparing the distance vector to update c
 dist_matrix = np.triu(optmodel.distances)

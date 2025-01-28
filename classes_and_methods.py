@@ -3,6 +3,7 @@ import matplotlib.ticker as ticker
 import pyepo
 import time
 import torch
+import math
 
 from torch import nn
 
@@ -98,3 +99,24 @@ def visLearningCurve(loss_log, loss_log_regret, path, show = False):
 
     # Saves the fig in the output path
     fig.savefig(path + 'learning_curve.png', dpi=300, bbox_inches='tight')
+
+def haversine(coord1, coord2):
+    R = 3959.0  # Radius of the Earth in miles
+    lat1, lon1 = coord1
+    lat2, lon2 = coord2
+    
+    # Convert latitude and longitude from degrees to radians
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+    
+    # Haversine formula
+    dlon = lon2_rad - lon1_rad
+    dlat = lat2_rad - lat1_rad
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    
+    # Distance in miles
+    distance = R * c
+    return distance

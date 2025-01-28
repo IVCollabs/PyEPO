@@ -36,13 +36,9 @@ for (i, j, k) in selected_nodes:
     routes[k].append((i, j))
 print(routes)
 
-coordinates = {
-        0: (0, 0),  # Depot
-        1: (2, 1),
-        2: (1, 3),
-        3: (3, 2),
-        4: (4, 4),
-    }
+coordinate_dict = {}
+for idx, coord in enumerate(optmodel.coordinates):
+    coordinate_dict[idx] = coord
 
 # Transform the distance matrix into a dictionary
 dist = {}
@@ -52,4 +48,4 @@ for i in range(n):
         if i != j:  
             dist[(i, j)] = optmodel.distances[i][j]
             
-plot_salesman_routes(routes, coordinates, optmodel.num_salesmen, dist) 
+plot_salesman_routes(routes, coordinate_dict, optmodel.num_salesmen, dist) 
