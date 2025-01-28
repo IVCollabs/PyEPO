@@ -11,7 +11,7 @@ from tsp import MStspMTZModel
 np.random.seed(42) 
 
 # Initializes the model
-optmodel = MStspMTZModel(num_nodes=5)
+optmodel = MStspMTZModel()
 
 # Sets the objective function
 dist_matrix = np.triu(optmodel.distances)

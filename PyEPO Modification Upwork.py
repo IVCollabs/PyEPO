@@ -31,7 +31,7 @@ torch.manual_seed(42)
 
 # Build optimization model by calling the single travelling salesman model
 # optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
-optmodel = MStspMTZModel(num_nodes=None)
+optmodel = MStspMTZModel()
 
 NUM_NODE = len(optmodel.coordinates) # number of nodes in the network
 

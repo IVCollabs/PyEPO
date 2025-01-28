@@ -21,12 +21,8 @@ class MStspMTZModel(tspABModel):
         num_nodes (int): Number of nodes
         edges (list): List of edge index
     """
-    def __init__(self, num_nodes):
-        """
-        Args:
-            num_nodes (int): number of nodes
-        """
-        self._loadInfo(num_nodes)
+    def __init__(self):
+        self._loadInfo()
         super().__init__(len(self.coordinates))
 
     def _getModel(self):
@@ -176,12 +172,9 @@ class MStspMTZModel(tspABModel):
 
         return sol, _
 
-    def _loadInfo(self, num_nodes):
+    def _loadInfo(self):
         """
         A method to load additional information from external files for the model
-        
-        Args:
-            num_nodes (int): number of nodes
         """
 
         # Loading skills
