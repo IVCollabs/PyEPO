@@ -21,8 +21,8 @@ class MStspMTZModel(tspABModel):
         num_nodes (int): Number of nodes
         edges (list): List of edge index
     """
-    def __init__(self):
-        self._loadInfo()
+    def __init__(self,input_path,skill_path,coodinates_path):
+        self._loadInfo(input_path,skill_path,coodinates_path)
         super().__init__(len(self.coordinates))
 
     def _getModel(self):
@@ -95,90 +95,127 @@ class MStspMTZModel(tspABModel):
         return m, x
 
     def setObj(self, c):
-        #TODO: This needs to be updated to minimize traval cost
         """
-        A method to set objective function
+        A method to set the objective function for the optimization model.
+
+        This method constructs a symmetric cost matrix from the given cost vector `c`
+        and uses it to define the objective function. The objective function represents
+        the total cost of all paths traversed by the salesmen, excluding self-loops
+        (i.e., paths from a node to itself).
 
         Args:
-            c (list): cost vector
+            c (list): A cost vector representing the costs of paths between nodes.
+                    The length of `c` should satisfy N = k*(k-1)/2, where k is the
+                    number of nodes.
         """
-        # if len(c) != self.num_cost:
-        #     raise ValueError("Size of cost vector cannot match vars.")
 
-        def criar_matriz_simetrica(vetor):
-            # Determinar o tamanho da matriz k
-            N = len(vetor)
-            k = int((1 + np.sqrt(1 + 8 * N)) / 2)  # Resolve N = k*(k-1)/2 para k
-            
-            # Inicializa uma matriz kxk com zeros
-            matriz = np.zeros((k, k))
-            
-            # Preenche o triângulo superior (excluindo a diagonal principal)
-            idx = 0  # Índice para percorrer o vetor
-            for i in range(k):
-                for j in range(i + 1, k):
-                    matriz[i, j] = vetor[idx]
-                    idx += 1
-            
-            # Reflete os valores no triângulo inferior
-            for i in range(k):
-                for j in range(i + 1, k):
-                    matriz[j, i] = matriz[i, j]
-            
-            return matriz
+        # Determine the size of the cost matrix `k` based on the length of the cost vector `c`
+        # The formula solves N = k*(k-1)/2 for k, where N is the length of `c`
+        N = len(c)
+        k = int((1 + np.sqrt(1 + 8 * N)) / 2)
 
-        # Exemplo de uso
-        # vetor = [1, 2, 3, 4, 5, 6]  # Vetor de 6 elementos (k=4)
-        c_matrix = criar_matriz_simetrica(c)
-        # print(matriz_simetrica)
+        # Initialize a kxk matrix with zeros to store the costs
+        c_matrix = np.zeros((k, k))
 
+        # Fill the upper triangle of the matrix (excluding the main diagonal)
+        # using the values from the cost vector `c`
+        idx = 0  # Index to traverse the cost vector
+        for i in range(k):
+            for j in range(i + 1, k):
+                c_matrix[i, j] = c[idx]
+                idx += 1
+
+        # Mirror the values from the upper triangle to the lower triangle
+        # to make the matrix symmetric
+        for i in range(k):
+            for j in range(i + 1, k):
+                c_matrix[j, i] = c_matrix[i, j]
+
+        # Calculate the total cost by summing the costs of all paths traversed by the salesmen
+        # Exclude self-loops (i.e., paths where i == j)
         aux = []
         for k in range(self.num_salesmen):
-            
             for i in self.nodes:
                 for j in self.nodes:
                     if i != j:
-                        aux.append(self.x[i, j, k] *c_matrix[i][j])
+                        aux.append(self.x[i, j, k] * c_matrix[i][j])
 
-
+        # Define the objective function as the sum of all costs
         obj = gp.quicksum(aux)
-        # obj = gp.quicksum(self.distances[i][j] * self.x[i, j, k] 
-        #                   for i in self.nodes 
-        #                   for j in self.nodes 
-        #                   for k in range(self.num_salesmen))
-        
+
+        # Set the objective function for the model
         self._model.setObjective(obj)
-
+    
     def solve(self):
+        """
+        Solves the problem and processes the solution to aggregate the results.
 
+        This method overrides the parent class's solve method to post-process the solution.
+        It aggregates the solution by summing the contributions of each salesman and
+        removes self-loops (i.e., paths from a node to itself). The final solution
+        represents the total number of times each path was traversed by all salesmen.
+
+        Returns:
+            tuple: A tuple containing the processed solution
+                returned by the parent class's solve method.
+        """
+
+        # Call the parent class's solve method to get the initial solution
         sol, _ = super().solve()
 
-        sol =  [sum(sol[i:i + self.num_salesmen]) for i in range(0, len(sol), self.num_salesmen)]
+        # Aggregate the solution by summing the contributions of each salesman
+        # This is done because we are interested in the total number of times each path
+        # was traversed, regardless of which salesman traversed it.
+        sol = [sum(sol[i:i + self.num_salesmen]) for i in range(0, len(sol), self.num_salesmen)]
 
+        # Reshape the solution into a matrix where each row represents a node
+        # and each column represents the connections from that node.
         sol_matrix = [sol[i:i + self.num_nodes] for i in range(0, len(sol), self.num_nodes)]
 
-        def soma_simetricos(matriz):
-            n = len(matriz)
-            vetor_resultante = []
-            
-            for i in range(n):
-                for j in range(i + 1, n):
-                    soma = matriz[i][j] + matriz[j][i]
-                    vetor_resultante.append(soma)
-            
-            return vetor_resultante
+        # Initialize a list to store the updated solution
+        updated_sol = []
 
-        sol = soma_simetricos(sol_matrix)
+        # Iterate over the solution matrix to compute the sum of paths between nodes
+        # while ignoring self-loops (i.e., paths from a node to itself).
+        for i in range(len(sol_matrix)):
+            for j in range(i + 1, len(sol_matrix)):
+                # Sum the paths from node i to node j and from node j to node i
+                soma = sol_matrix[i][j] + sol_matrix[j][i]
+                updated_sol.append(soma)
 
+        # Update the solution with the processed results
+        sol = updated_sol
+
+        # Return the processed solution and any additional metadata
         return sol, _
 
-    def _loadInfo(self):
+    def _loadInfo(
+            self,
+            input_path: str,
+            skill_path: str,
+            coodinates_path: str):
         """
-        A method to load additional information from external files for the model
+        A method to load additional information from external files for the model.
+
+        This method reads data from three specified file paths: one for general input data,
+        one for skill-related data, and one for coordinate data. These files are used to
+        populate the model with the necessary information for further processing.
+
+        Args:
+            input_path (str): The file path to the input data folder.
+
+            skill_path (str): The file path to the skill data file. This file contains information
+                            about the skills required or available at each node, which is used
+                            to match nodes with the appropriate salesmen or resources.
+
+            coordinates_path (str): The file path to the coordinates data file. This file contains
+                                    the spatial coordinates (e.g., latitude and longitude) of each
+                                    node, which are used for distance calculations or visualization.
+
         """
 
         # Loading skills
-        data = pd.read_excel("input_data/skill_mapping.xlsx")
+        data = pd.read_excel(input_path+skill_path)
         data = data.set_index('TSP')
         self.skills = {}
         for i in range(len(data)):
@@ -187,7 +224,7 @@ class MStspMTZModel(tspABModel):
         self.max_city = len(data.iloc[0])
 
         # Loading coordinates
-        data = pd.read_csv(os.path.join('input_data', 'coordinates.csv'))
+        data = pd.read_csv(os.path.join(input_path, coodinates_path))
         coordinates = [(lat, lon) for lat, lon in zip(data['Latitude'], data['Longitude'])]
 
         # Filtering the same coordinates 

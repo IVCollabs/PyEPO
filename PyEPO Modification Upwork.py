@@ -18,7 +18,10 @@ NUM_DATA = 100   # number of training instances
 NUM_FEAT = 5     # number of features x (to predict c)    
 NUM_EPOCHS = 100 # number of epochs for training
 BATCH_SIZE = 10  # batch size for training
-OUTPUT_PATH = "outputs/"
+OUTPUT_PATH = "outputs/"                     # output folder
+INPUT_PATH = "input_data"                    # input folder
+SKILL_MAPPING_PATH = "/skill_mapping.xlsx"   # skill file (index of salesman is TSP)
+COORDINATES_PATH = "coordinates.csv"         # coodinates file (columns: Latitude and Longitude)
 
 # Verifies if outputs path folder exist,
 # if not, creates one.
@@ -30,8 +33,7 @@ np.random.seed(42)
 torch.manual_seed(42)
 
 # Build optimization model by calling the single travelling salesman model
-# optmodel = pyepo.model.grb.tspMTZModel(NUM_NODE)
-optmodel = MStspMTZModel()
+optmodel = MStspMTZModel(INPUT_PATH,SKILL_MAPPING_PATH,COORDINATES_PATH)
 
 NUM_NODE = len(optmodel.coordinates) # number of nodes in the network
 
