@@ -1,0 +1,7 @@
+/data
+/outputs
+/dist
+/build
+*.pyc
+*.spec
+*.json

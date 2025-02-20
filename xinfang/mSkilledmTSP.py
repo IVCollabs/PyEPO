@@ -104,7 +104,7 @@ routes = {}
 
 # Extract routes from x
 for (i, j, k), value in x.items():
-    if value > 0.5:  # Include only active routes
+    if value.X > 0.5:  # Include only active routes
         if k not in routes:
             routes[k] = []
         routes[k].append((i, j))
