@@ -1,5 +1,7 @@
 """Main script to run custom model.
-Source: https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimization%20Model.ipynb
+
+Based on a PyEPO example in: 
+https://github.com/khalil-research/PyEPO/blob/main/notebooks/01%20Optimization%20Model.ipynb
 """
 
 import numpy as np

@@ -1,4 +1,4 @@
-'''Script with coordenate plots'''
+'''Script with coordenate plots using folium'''
 
 import folium
 import numpy as np
