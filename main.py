@@ -13,7 +13,10 @@ from tsp import MStspMTZModel
 np.random.seed(42) 
 
 # Initializes the model
-optmodel = MStspMTZModel()
+INPUT_PATH = "input_data"                    # input folder
+SKILL_MAPPING_PATH = "/skill_mapping.xlsx"   # skill file (index of salesman is TSP)
+COORDINATES_PATH = "coordinates.csv"         # coodinates file (columns: Latitude and Longitude)
+optmodel = MStspMTZModel(INPUT_PATH,SKILL_MAPPING_PATH,COORDINATES_PATH)
 
 # Sets the objective function
 dist_matrix = np.triu(optmodel.distances)
