@@ -228,7 +228,7 @@ class MStspMTZModel(tspABModel):
         coordinates = [(lat, lon) for lat, lon in zip(data['Latitude'], data['Longitude'])]
 
         # Filtering the same coordinates 
-        coordinates = list(set(coordinates))[:10]
+        coordinates = list(set(coordinates))
 
         # TODO: The type of the data is not the same was before
         # Calculating the distances
