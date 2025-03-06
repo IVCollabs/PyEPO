@@ -79,12 +79,6 @@ regret = pyepo.metric.regret(reg, optmodel, loader_test)
 print("Regret benchmark: ", regret)
 
 ### Training models
-
-# Init model SPO
-reg = LinearRegression(
-    num_feat = NUM_FEAT,
-    num_edge = NUM_EDGE
-)
 spop = pyepo.func.SPOPlus(optmodel, processes=1)
 
 # Running the SPO model
