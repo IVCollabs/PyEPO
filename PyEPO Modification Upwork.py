@@ -13,7 +13,6 @@ from classes_and_methods import LinearRegression, trainModel, visLearningCurve
 from tsp import MStspMTZModel
 
 # Parameters
-NUM_SALESMAN = 2 # number of salesman
 NUM_DATA = 100   # number of training instances
 NUM_FEAT = 5     # number of features x (to predict c)    
 NUM_EPOCHS = 100 # number of epochs for training
