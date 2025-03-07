@@ -23,4 +23,4 @@ The output should be something like:
 ![alt text](images/fig_SPOlearning_curve.png)
 
 > [!WARNING]
-> With the attached data the model will not run with the free version of Gurobi, and a license is required. To run on a free license limit the amount of coordinates to around 10.
+> With the attached data, the model will not run with the free version of Gurobi and a license is required. To run on a free license, limit the amount of coordinates to around 10.
