@@ -1,7 +1,8 @@
-guropipy
+gurobipy>=12.0.0
 numpy
 matplotlib
 networkx
 pyepo
 pandas
 openpyxl
+folium
