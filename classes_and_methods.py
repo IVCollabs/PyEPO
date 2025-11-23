@@ -8,14 +8,13 @@ import math
 from torch import nn
 
 class LinearRegression(nn.Module):
-
     def __init__(self, num_feat, num_edge):
-        super(LinearRegression, self).__init__()
+        super().__init__()
         self.linear = nn.Linear(num_feat, num_edge)
 
     def forward(self, x):
-        out = self.linear(x)
-        return out
+        return self.linear(x)
+
 
 # loader_train and loader_test are global variables; no need to pass as arguments
 def trainModel(reg, loss_func, method_name, opt_model, loader_train, loader_test, num_epochs=10, lr=1e-2):
@@ -26,7 +25,11 @@ def trainModel(reg, loss_func, method_name, opt_model, loader_train, loader_test
     # init log
     loss_log = []
     #The initial regret is computed on the test set using pyepo.metric.regret().
-    loss_log_regret = [pyepo.metric.regret(reg, opt_model, loader_test)]
+    #loss_log_regret = [pyepo.metric.regret(reg, opt_model, loader_test)]
+    loss_log_regret = [(pyepo.metric.regret(reg, opt_model, loader_test), time.time())]
+
+    
+    mse_log = [pyepo.metric.mse.MSE(reg,  loader_test)]
     # init elpased time
     elapsed = 0
     for epoch in range(num_epochs):
@@ -62,11 +65,84 @@ def trainModel(reg, loss_func, method_name, opt_model, loader_train, loader_test
             loss = loss.mean() 
             loss_log.append(loss.item())
         regret = pyepo.metric.regret(reg, opt_model, loader_test)
-        loss_log_regret.append(regret)
-        print("Epoch {:2},  Loss (Train): {:9.4f},  Regret (Validation): {:7.4f}%".format(epoch+1, loss.item(), regret*100))
+        #loss_log_regret.append(regret)
+        loss_log_regret.append((regret, time.time()))
+
+                
+        mse_value=pyepo.metric.mse.MSE(reg,  loader_test)
+        mse_log.append(mse_value)
+        print("Epoch {:2},  MSE (Vali): {:9.4f},  Decision Regret (Vali): {:7.4f}%".format(epoch+1, mse_value, regret*100))
+       
+    
     print("Total Elapsed Time: {:.2f} Sec.".format(elapsed))
-    return loss_log, loss_log_regret 
+    return loss_log_regret, mse_log
     #loss_log is loss for training set and loss_log_regret is for testing set
+
+def plot_mse_and_regret_side_by_side(df_all, SEED, num, METHODS, OUTPUT_PATH):
+    """
+    Creates a side-by-side plot of two methods
+    """
+    method_1 = METHODS[0]
+    method_2 = METHODS[1]
+
+    # Extract data
+    epochs = df_all.index
+
+    mse_1  = df_all[f"mse_{method_1}"]
+    mse_2 = df_all[f"mse_{method_2}"]
+
+    regret_1  = df_all[f"decision_regret_{method_1}"] * 100   # convert to %
+    regret_2 = df_all[f"decision_regret_{method_2}"] * 100
+
+    min_1  = regret_1.min()
+    min_2 = regret_2.min()
+
+    # --- Create Figure (Two Subplots) ---
+    plt.figure(figsize=(14, 5))
+
+    # ---------------------------------------------------
+    # 1) MSE subplot
+    # ---------------------------------------------------
+    plt.subplot(1, 2, 1)
+    plt.plot(epochs, mse_2, marker="o", linestyle="--", linewidth=2, label=f"{method_2} MSE")
+    plt.plot(epochs, mse_1, marker="s", linestyle="--", linewidth=2, label=f"{method_1} MSE")
+
+    plt.xlabel("Epoch", fontsize=12)
+    plt.ylabel("MSE", fontsize=12)
+    plt.title(f"MSE: {method_1} vs {method_2}", fontsize=13, fontweight="bold")
+    plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    plt.legend(frameon=False)
+
+    # ---------------------------------------------------
+    # 2) Decision Regret subplot
+    # ---------------------------------------------------
+    plt.subplot(1, 2, 2)
+    plt.plot(
+        epochs, regret_2,
+        marker="o", linestyle="--", linewidth=2,
+        label=f"{method_2} Regret (min: {min_2:.2f}%)"
+    )
+    plt.plot(
+        epochs, regret_1,
+        marker="s", linestyle="--", linewidth=2,
+        label=f"{method_1} Regret (min: {min_1:.2f}%)"
+    )
+
+    plt.xlabel("Epoch", fontsize=12)
+    plt.ylabel("Decision Regret (%)", fontsize=12)
+    plt.title("Decision Regret: {method_1} vs {method_2}", fontsize=13, fontweight="bold")
+    plt.grid(True, linestyle="--", linewidth=0.5, alpha=0.7)
+    plt.legend(frameon=False)
+
+    plt.tight_layout()
+
+    # Save figure
+    fname = f"{OUTPUT_PATH}plot_mse_regret_side_by_side_seed{SEED}_location{num}.png"
+    plt.savefig(fname, dpi=300)
+    plt.close()
+
+    print(f"Saved side-by-side {method_1} vs {method_2} Regret figure → {fname}")
+
 
 def visLearningCurve(loss_log, loss_log_regret, path, show = False):
     # create figure and subplots
