@@ -44,22 +44,22 @@ def trainModel(reg, loss_func, method_name, opt_model, loader_train, loader_test
             cp = reg(x)
             if method_name == "spo+":
                 loss = loss_func(cp, c, w, z)        
-            if method_name == "ptb" or method_name == "pfy" or method_name == "nce" or method_name == "cmap":
+            if method_name in ["ptb", "pfy", "imle", "aimle", "nce", "cmap"]:
                 loss = loss_func(cp, w)
-            if method_name == "dbb" or method_name == "nid":
+            if method_name in ["dbb", "nid"]:
                 loss = loss_func(cp, c, z)
             #if method_name == "ltr": #learning to rank
-            if method_name == "2s" or method_name == "ltr":
+            if method_name in ["pg", "ltr", "2s"]:
                 loss = loss_func(cp, c)
             # backward pass
             optimizer.zero_grad()
-            loss.mean().backward() #$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+            loss.mean().backward() 
             optimizer.step()
             # record time
             tock = time.time()
             elapsed += tock - tick
             # log
-            loss = loss.mean() #$$$$$$$$$$$$$$$$$$$$$$$$
+            loss = loss.mean() 
             loss_log.append(loss.item())
         regret = pyepo.metric.regret(reg, opt_model, loader_test)
         loss_log_regret.append(regret)

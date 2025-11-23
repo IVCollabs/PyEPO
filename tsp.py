@@ -9,6 +9,7 @@ import numpy as np
 from gurobipy import GRB
 from pyepo.model.grb.tsp import tspABModel
 from classes_and_methods import haversine
+import math
 
 
 class MStspMTZModel(tspABModel):
@@ -91,7 +92,8 @@ class MStspMTZModel(tspABModel):
             m.addConstr(gp.quicksum(x[i, j, k] 
                                     for i in self.nodes 
                                     for j in range(1, self.num_nodes) 
-                                    if i != j) <= self.max_city, name=f"MaxTour_{k}")
+                                    if i != j) <= math.ceil(self.max_city / self.num_salesmen), name=f"MaxTour_{k}")
+       
         return m, x
 
     def setObj(self, c):
