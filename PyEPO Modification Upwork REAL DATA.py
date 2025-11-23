@@ -32,9 +32,10 @@ NUM_EPOCHS = 2 # number of epochs for training
 BATCH_SIZE = 10  # batch size for training
 OUTPUT_PATH = "outputs/"                     # output folder
 INPUT_PATH = "input_data"                    # input folder
-SKILL_MAPPING_PATH = "/skill_mapping11.xlsx"   # skill file (index of salesman is TSP)
-COORDINATES_PATH = "coordinates11.csv"         # coodinates file (columns: Latitude and Longitude)
+SKILL_MAPPING_PATH = f"/skill_mapping{num}.xlsx"   # skill file (index of salesman is TSP)
+COORDINATES_PATH = f"coordinates{num}.csv"         # coodinates file (columns: Latitude and Longitude)
 
+METHOD = 'ptb' #loss function
 
 # Verifies if outputs path folder exist,
 # if not, creates one.
@@ -107,28 +108,18 @@ print("Regret benchmark: ", regret)
 ### Training models
 method_dict = LossMethods(optmodel, dataset_train).get_loss_dict()
 
-for method, loss  in method_dict.items():
-    print(method)
-    # Running the model
-    loss_log_SPO, loss_log_regret_SPO = trainModel(
-        reg=reg, loss_func=loss, method_name=method, opt_model=optmodel, 
-        loader_train=loader_train, loader_test=loader_test, num_epochs=NUM_EPOCHS)
+# Running the model
+print(METHOD)
+loss_log, loss_log_regret = trainModel(
+    reg=reg, loss_func=method_dict[METHOD], method_name=METHOD, opt_model=optmodel, 
+    loader_train=loader_train, loader_test=loader_test, num_epochs=NUM_EPOCHS)
 
 
 ### Saving the results
-
 # Output SPO results
-df = pd.DataFrame(loss_log_SPO)
+df = pd.DataFrame(loss_log)
 df.to_excel(OUTPUT_PATH + 'loss_logs_SPO.xlsx', index=False) 
 
-df = pd.DataFrame(loss_log_regret_SPO)
-df.to_excel(OUTPUT_PATH + 'loss_log_regret_SPO.xlsx', index=False) 
-visLearningCurve(loss_log_SPO, loss_log_regret_SPO, OUTPUT_PATH + 'fig_SPO')
-
-# Output 2s results
-df = pd.DataFrame(loss_log_2s)
-df.to_excel(OUTPUT_PATH + 'loss_logs_2s.xlsx', index=False) 
-
-df = pd.DataFrame(loss_log_regret_2s)
-df.to_excel(OUTPUT_PATH + 'loss_log_regret_2s.xlsx', index=False) 
-visLearningCurve(loss_log_2s, loss_log_regret_2s, OUTPUT_PATH + 'fig_2s')
+df = pd.DataFrame(loss_log_regret)
+df.to_excel(OUTPUT_PATH + f'loss_log_regret_{METHOD}.xlsx', index=False) 
+visLearningCurve(loss_log, loss_log_regret, OUTPUT_PATH + 'fig_SPO')
